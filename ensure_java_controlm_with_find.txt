@@ -1,0 +1,135 @@
+#!/bin/ksh
+# ==================================================================
+# Script : ensure_java_controlm.ksh
+# Purpose : Detect OS (Linux/AIX), locate Java 17 package in /tools/list/ctm_agent/java_pkg,
+#           install it, validate installation, and set JAVA_HOME for Control-M Agent 9.0.21.300.
+# Rules   : Offline environment - Java package must be present in /tools/list/ctm_agent/java_pkg
+#           - RPM for Linux
+#           - BFF or pax.Z for AIX
+# ==================================================================
+
+# ------------------------------------------------------------------
+# Global variables
+# ------------------------------------------------------------------
+CTM_JAVA_VERSION=17
+JAVA_PKG_DIR="/tools/list/ctm_agent/java_pkg"
+JAVA_BASE_DIR="/tools/list/ctm_agent/java"
+# CTM_JAVA_VERSION : version attendue (17)
+# JAVA_PKG_DIR     : répertoire où sont déposés les binaires (rpm, bff, pax.Z)
+# JAVA_BASE_DIR    : répertoire standard où sera installé/copier Java pour Control-M
+
+# ------------------------------------------------------------------
+# Function: log (affiche un message avec date/heure)
+# ------------------------------------------------------------------
+log() {
+  printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+# ------------------------------------------------------------------
+# Function: die (affiche une erreur et arrête le script)
+# ------------------------------------------------------------------
+die() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+# ------------------------------------------------------------------
+# Function: detect_os (détecte l'OS courant)
+# ------------------------------------------------------------------
+detect_os() {
+  OS_NAME="$(uname -s 2>/dev/null)"
+  case "$OS_NAME" in
+    Linux) echo "Linux";;
+    AIX)   echo "AIX";;
+    *)     die "Unsupported OS: ${OS_NAME:-unknown}";;
+  esac
+}
+
+# ------------------------------------------------------------------
+# Function: install_java_linux (installe Java 17 depuis package rpm local)
+# ------------------------------------------------------------------
+install_java_linux() {
+  log "Linux detected → installing Java ${CTM_JAVA_VERSION} from ${JAVA_PKG_DIR}"
+
+  PKG_FILE=$(find "$JAVA_PKG_DIR" -maxdepth 1 -type f -name "ibm-semeru-open-jdk*${CTM_JAVA_VERSION}*.rpm" | head -1)
+  if [ -z "$PKG_FILE" ]; then
+    die "No Java ${CTM_JAVA_VERSION} RPM package (ibm-semeru-open-jdk*${CTM_JAVA_VERSION}*.rpm) found in ${JAVA_PKG_DIR}"
+  fi
+
+  # Installation du package avec rpm (offline)
+  sudo rpm -ivh "$PKG_FILE" || die "RPM installation failed for $PKG_FILE"
+
+  # Localisation du répertoire JAVA_HOME installé
+  SYS_JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")
+  [ -z "$SYS_JAVA_HOME" ] && die "Unable to detect installed Java path"
+
+  # Création du répertoire standard CA-GIP et copie des fichiers
+  sudo mkdir -p "$JAVA_BASE_DIR"
+  sudo cp -a "$SYS_JAVA_HOME"/* "$JAVA_BASE_DIR"/ || die "Failed to copy Java files"
+
+  export BMC_INST_JAVA_HOME="$JAVA_BASE_DIR"
+  log "Java installed at $BMC_INST_JAVA_HOME"
+}
+
+# ------------------------------------------------------------------
+# Function: install_java_aix (installe Java 17 depuis package bff/pax.Z local)
+# ------------------------------------------------------------------
+install_java_aix() {
+  log "AIX detected → installing Java ${CTM_JAVA_VERSION} from ${JAVA_PKG_DIR}"
+
+  PKG_FILE=$(find "$JAVA_PKG_DIR" -maxdepth 1 -type f \( -name "ibm-semeru-open-jdk*${CTM_JAVA_VERSION}*.bff" -o -name "ibm-semeru-open-jdk*${CTM_JAVA_VERSION}*.pax.Z" \) | head -1)
+  if [ -z "$PKG_FILE" ]; then
+    die "No Java ${CTM_JAVA_VERSION} package (ibm-semeru-open-jdk*${CTM_JAVA_VERSION}*.bff/.pax.Z) found in ${JAVA_PKG_DIR}"
+  fi
+
+  # Installation avec installp (offline)
+  sudo installp -aY -d "${JAVA_PKG_DIR}" all || die "installp failed"
+
+  # Vérifie si Java est bien installé dans /usr/java17_64
+  [ -x /usr/java${CTM_JAVA_VERSION}_64/bin/java ] || die "Java ${CTM_JAVA_VERSION} not found after install"
+
+  # Création du répertoire standard CA-GIP et copie des fichiers
+  sudo mkdir -p "$JAVA_BASE_DIR"
+  sudo cp -a /usr/java${CTM_JAVA_VERSION}_64/* "$JAVA_BASE_DIR"/ || die "Failed to copy Java files"
+
+  export BMC_INST_JAVA_HOME="$JAVA_BASE_DIR"
+  log "Java installed at $BMC_INST_JAVA_HOME"
+}
+
+# ------------------------------------------------------------------
+# Function: validate_java (vérifie que la version est bien 17.x)
+# ------------------------------------------------------------------
+validate_java() {
+  ver="$("${BMC_INST_JAVA_HOME}/bin/java" -version 2>&1 | head -1)"
+  echo "$ver" | grep "version \"${CTM_JAVA_VERSION}\." >/dev/null 2>&1 ||     die "Invalid Java version: $ver (Java ${CTM_JAVA_VERSION} required)."
+  log "Java validated successfully: $ver"
+}
+
+# ------------------------------------------------------------------
+# MAIN EXECUTION
+# ------------------------------------------------------------------
+OS=$(detect_os)
+log "Detected OS: $OS"
+
+case $OS in
+  Linux) install_java_linux ;;
+  AIX)   install_java_aix ;;
+esac
+
+validate_java
+
+echo "BMC_INST_JAVA_HOME=${BMC_INST_JAVA_HOME}"
+
+# ==================================================================
+# GLOBAL EXPLANATION
+# ------------------------------------------------------------------
+# 1. Détection de l'OS via uname (Linux ou AIX).
+# 2. Recherche du package Java 17 dans /tools/list/ctm_agent/java_pkg :
+#    - RPM pour Linux
+#    - BFF ou pax.Z pour AIX
+# 3. Installation du package avec la commande adaptée (rpm ou installp).
+# 4. Copie des fichiers installés vers le répertoire standard CA-GIP : /tools/list/ctm_agent/java.
+# 5. Export de BMC_INST_JAVA_HOME pour que Control-M utilise ce Java.
+# 6. Validation avec java -version (doit être 17.x).
+# 7. Erreur claire si absence du package, installation échouée ou mauvaise version.
+# ==================================================================
