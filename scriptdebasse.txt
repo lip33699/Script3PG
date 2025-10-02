@@ -1,0 +1,359 @@
+bash-4.4$ cat exploitcontrolm.ksh
+#!/bin/ksh
+
+###########################################################
+# INFO : SCRIPT D'EXPLOITATION CONTROL-M
+# POUR : CREDIT AGRICOLE
+# PAR  : KARL NIEL
+###########################################################
+# 2021.07.19 : K. NIEL, Creation
+# 2023 07 13 : K. NIEL - Update ProductVersion 9.0.20.200
+###########################################################
+
+# VARIABLE GLOBAL
+###########################################################
+
+export PATH=/bin:/usr/bin:/usr/sbin:/tools/admin/bin
+ProductVersion="9.0.20.200"
+Repository="/softwares/PRODUITS/CONTROLM"
+OS=$1
+OPT=$2
+Envir=$3
+OSuname=$(uname)
+OSlevel=$(oslevel)
+
+#- Fonctions -##############################################
+
+function Envir
+{
+case $Envir in
+              HP|PR) ;;
+                  *) echo "Parametre Envir invalide : $4"
+                     echo "Autorisation pour : HP|PR"
+                     echo "Abandon..."
+                     exit 1 ;;
+esac
+}
+
+function nimmount
+{
+    echo "-> Montage du serveur NIM"
+
+    /tools/admin/bin/mountnim
+}
+
+function nimunmount
+{
+    echo "-> Demontage du serveur NIM"
+
+    /tools/admin/bin/umountnim
+}
+
+# GESTION AIX
+###########################################################
+
+function installaixstandalone
+{
+    echo "-> Installation en de Control-M en mode standalone sur AIX"
+
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    ${Repository}/AixInstall/Install_Aix_CTMAGT.ksh -e ${Envir}
+}
+
+function installaixclusteractif
+{
+    echo "-> Installation en de Control-M en mode cluster actif sur AIX"
+
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    ${Repository}/AixInstall/Install_Aix_CTMAGT_Cluster_ACTIF.ksh -e ${Envir}
+}
+
+function installaixclusterpassif
+{
+    echo "-> Installation en de Dollaruniverse en mode cluster passif sur AIX"
+
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    ${Repository}/AixInstall/Install_Aix_CTMAGT_Cluster_PASSIF.ksh -e ${Envir}
+}
+
+function upgradeagentaix
+{
+    echo "-> Ugrade Control-M Agent AIX with last version on tools repository: ${ProductVersion}"
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    cd /tools/list/ctmagent/ctmagt
+    ${Repository}/V${ProductVersion}/AGENT/AIX/setup.sh
+}
+function StartctmagtAix
+{
+    echo "-> Start Control-M Agent AIX"
+    /tools/list/ctmagent/ctmagt/ctm/scripts/start-ag -u ctmagt -p all
+    chmod 644 /tools/list/ctmagent/ctmagt/ctm/proclog/start_ag*
+    chmod -R 755 /tools/list/ctmagent/ctmagt/ctm/proclog/LogsZip
+    chmod -R 755 /tools/list/ctmagent/ctmagt/ctm/proclog/Metrics
+}
+
+function StopctmagtAix
+{
+    echo "-> Stop Control-M Agent AIX"
+    /tools/list/ctmagent/ctmagt/ctm/scripts/shut-ag -u ctmagt -p all
+}
+
+function uninstallCTMAix
+{
+    echo "-> desinstallation de Control-M sur AIX"
+
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    ${Repository}/AixInstall/CTMuninstall.ksh
+}
+
+# GESTION LINUX
+###########################################################
+
+function installlinuxstandalone
+{
+    echo "-> Installation en de Control-M en mode standalone sur LINUX"
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    ${Repository}/LinuxInstall/Install_Linux_CTMAGT.ksh -e ${Envir}
+}
+
+function upgradeagentlinux
+{
+    echo "-> Ugrade Control-M Agent LINUX with last version on tools repository: ${ProductVersion}"
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    cd /tools/list/ctmagent/ctmagt
+    ${Repository}/V${ProductVersion}/AGENT/Linux/setup.sh
+}
+
+function uninstallCTMLinux
+{
+    echo "-> desinstallation de Control-M sur LINUX"
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+    ${Repository}/LinuxInstall/CTMuninstall.ksh
+}
+
+function StartctmagtLinux
+{
+   CheckVersion=$(oslevel | cut -c 1)
+   if [[ ${CheckVersion} < 7 ]] ; then
+    echo "-> Start Control-M Agent LINUX without use systemctl..."
+    /tools/list/ctmagent/ctmagt/ctm/scripts/start-ag -u ctmagt -p all
+   else
+    echo "-> Start Control-M Agent LINUX with systemctl..."
+    systemctl start ctmagent.service
+   fi
+   chmod 644 /tools/list/ctmagent/ctmagt/ctm/proclog/start_ag*
+   chmod -R 755 /tools/list/ctmagent/ctmagt/ctm/proclog/LogsZip
+   chmod -R 755 /tools/list/ctmagent/ctmagt/ctm/proclog/Metrics
+}
+
+function StopctmagtLinux
+{
+   CheckVersion=$(oslevel | cut -c 1)
+   if [[ ${CheckVersion} < 7 ]] ; then
+    echo "-> Stop Control-M Agent LINUX without use systemctl..."
+    /tools/list/ctmagent/ctmagt/ctm/scripts/shut-ag -u ctmagt -p all
+   else
+    echo "-> Stop Control-M Agent LINUX with systemctl..."
+    systemctl stop ctmagent.service
+   fi
+}
+
+function StartctmemLinux
+{
+   echo "-> Start Control-M EM LINUX with systemctl..."
+   systemctl start ctmem.service
+}
+
+function StopctmemLinux
+{
+   echo "-> Stop Control-M EM LINUX with systemctl..."
+   systemctl stop ctmem.service
+}
+
+function StartctmserverLinux
+{
+   echo "-> Start Control-M Server LINUX with systemctl..."
+   systemctl start ctmserver.service
+}
+
+function StopctmserverLinux
+{
+   echo "-> Stop Control-M Server LINUX with systemctl..."
+   systemctl stop ctmserver.service
+}
+
+function StartctmcaLinux
+{
+   echo "-> Start Control-M Serverr-CA LINUX with systemctl..."
+   systemctl start ctmca.service
+}
+
+function StopctmcaLinux
+{
+   echo "-> Stop Control-M Server-CA LINUX with systemctl..."
+   systemctl stop ctmca.service
+}
+
+# AUTRE
+###########################################################
+
+function usage
+{
+    clear
+    echo
+    echo "Usage : exploitcontrolm.ksh [AIX]   [INSTALLSTANDALONE|INSTALLCLUSTERACTIF|INSTALLCLUSTERPASSIF] [HP|PR]"
+    echo "                            [LINUX] [INSTALLSTANDALONE]                                          [HP|PR]"
+    echo
+    echo "                            [AIX]   [UPDGRADEAGENT]"
+    echo "                            [LINUX] [UPDGRADEAGENT]"
+    echo
+    echo "                            [AIX]   [STARTCTMAGTAIX|STOPCTMAGTAIX]"
+    echo "                            [LINUX] [STARTCTMAGTLINUX|STOPCTMAGTLINUX]"
+    echo
+    echo "                            [AIX]   [UNINSTALLCTMAIX]"
+    echo "                            [LINUX] [UNINSTALLCTMLINUX]"
+    echo
+    echo "                            [LINUX] [STARTCTMEM|STOPCTMEM]"
+    echo
+    echo "                            [LINUX] [STARTCTMSERVER|STOPCTMSERVER]"
+    echo "                            [LINUX] [STARTCTMCA|STOPCTMCA]"
+    echo
+    echo "                            [AUTRE] [MOUNTNIM|UMOUNTNIM"
+}
+
+case $OS in
+
+    AIX)
+        echo "OS         : ${OSuname}"
+        echo "OS version : ${OSlevel}"
+        echo ${OSuname} | grep -i AIX > /dev/null
+        RC=${?}
+        if [[ ${RC} != 0 ]] ; then
+         echo "################################################"
+         echo "ABORTED TOOLS :                                 "
+         echo "Selected COMMAND is not for this OS : ${OSuname}"
+         echo "################################################"
+         exit 1
+        fi
+        case $OPT in
+            INSTALLSTANDALONE)
+                Envir
+                nimmount
+                installaixstandalone
+                nimunmount
+                ;;
+            INSTALLCLUSTERACTIF)
+                Envir
+                nimmount
+                installaixclusteractif
+                nimunmount
+                ;;
+            INSTALLCLUSTERPASSIF)
+                Envir
+                nimmount
+                installaixclusterpassif
+                nimunmount
+                ;;
+            UPDGRADEAGENT)
+                nimmount
+                upgradeagentaix
+                nimunmount
+                ;;
+            STARTCTMAGTAIX)
+                StartctmagtAix
+                ;;
+            STOPCTMAGTAIX)
+                StopctmagtAix
+                ;;
+            UNINSTALLCTMAIX)
+                nimmount
+                uninstallCTMAix
+                nimunmount
+                ;;
+            *)
+                usage
+                ;;
+        esac
+        ;;
+
+
+    LINUX)
+        echo "OS         : ${OSuname}"
+        echo "OS version : ${OSlevel}"
+        echo ${OSuname} | grep -i LINUX > /dev/null
+        RC=${?}
+        if [[ ${RC} != 0 ]] ; then
+         echo "################################################"
+         echo "ABORTED TOOLS :                                 "
+         echo "Selected COMMAND is not for this OS : ${OSuname}"
+         echo "################################################"
+         exit 1
+        fi
+        case $OPT in
+            INSTALLSTANDALONE)
+                Envir
+                nimmount
+                installlinuxstandalone
+                nimunmount
+                ;;
+            UPDGRADEAGENT)
+                nimmount
+                upgradeagentlinux
+                nimunmount
+                ;;
+            STARTCTMAGTLINUX)
+                StartctmagtLinux
+                ;;
+            STOPCTMAGTLINUX)
+                StopctmagtLinux
+                ;;
+            UNINSTALLCTMLINUX)
+                nimmount
+                uninstallCTMLinux
+                nimunmount
+                ;;
+            STARTCTMEM)
+                StartctmemLinux
+                ;;
+            STOPCTMEM)
+                StopctmemLinux
+                ;;
+            STARTCTMSERVER)
+                StartctmserverLinux
+                ;;
+            STOPCTMSERVER)
+                StopctmserverLinux
+                ;;
+            STARTCTMCA)
+                StartctmcaLinux
+                ;;
+            STOPCTMCA)
+                StopctmcaLinux
+                ;;
+            *)
+                usage
+                ;;
+        esac
+        ;;
+
+
+    AUTRE)
+        case $OPT in
+            MOUNTNIM)
+                nimmount
+                ;;
+            UMOUNTNIM)
+                nimunmount
+                ;;
+            *)
+                usage
+                ;;
+        esac
+        ;;
+
+
+    *)
+        usage
+        ;;
+
+esac
