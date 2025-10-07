@@ -1,0 +1,21 @@
+usage_output()
+
+(
+
+        echo "Usage: <setup-program> [-BMC_INST_JAVA_HOME <path to java location>] |"
+
+        echo "                       [-silent <automated-install-xml-parameters-file> [-token <token value>] [-no-registration] [-BMC_INST_JAVA_H
+
+OME <path to java location>]] |"
+
+    echo "                       [[-no-registration] [-BMC_INST_JAVA_HOME <path to java location>] |"
+
+    echo "                       [-console [-token <token value>] [-no-registration] [-BMC_INST_JAVA_HOME <path to java location>] |"
+
+    echo "                       [-encrypt <string to encrypt> [-BMC_INST_JAVA_HOME <path to java location>]"
+
+)
+
+ 
+[-silent <automated-install-xml-parameters-file>
+ 
