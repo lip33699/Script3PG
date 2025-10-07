@@ -1,5 +1,5 @@
-bash-4.4$ cat exploitcontrolm.ksh
-#!/bin/ksh
+bash-4.4$ cat ControlmAgent21.3003PG.ksh
+#!/usr/bin/ksh 
 
 ###########################################################
 # INFO : SCRIPT D'EXPLOITATION CONTROL-M
@@ -19,14 +19,14 @@ export PATH=/bin:/usr/bin:/usr/sbin:/tools/admin/bin
 # ==========================================================
 # EXPLICATION GLOBALE :
 # Ce script est un wrapper d'exploitation pour installer, mettre à jour,
-# démarrer, arrêter ou désinstaller des composants Control-M (Agent, EM, Server, CA)
+# démarrer, arrêter ou désinstaller des composants Control-M Agent
 # sur AIX et Linux. Il utilise la variable ProductVersion pour pointer
 # vers les binaires dans ${Repository}/V${ProductVersion}.
 # Les opérations d'installation réelles sont déléguées aux scripts présents
 # dans le repository (LinuxInstall/, AixInstall/, V<version>/AGENT/...).
 # ==========================================================
 
-ProductVersion="9.0.21.300"
+ProductVersion="V9.0.21.200"
 Repository="/softwares/PRODUITS/CONTROLM"
 OS=$1
 OPT=$2
@@ -97,7 +97,7 @@ function installaixclusterpassif
     export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
     ${Repository}/AixInstall/Install_Aix_CTMAGT_Cluster_PASSIF.ksh -e ${Envir}
 }
-# EXPL: Lance le script d'installation AIX pour un cluster passif.
+# EXPL: Lance le script 2'installation AIX pour un cluster passif.
 
 
 function upgradeagentaix
@@ -105,7 +105,11 @@ function upgradeagentaix
     echo "-> Ugrade Control-M Agent AIX with last version on tools repository: ${ProductVersion}"
     export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
     cd /tools/list/ctmagent/ctmagt
-    ${Repository}/V${ProductVersion}/AGENT/AIX/setup.sh
+    # ${Repository}/V${ProductVersion}/AGENT/AIX/setup.sh
+    cd /tools/list/ctmagent/ctmagt
+    gtar -xzf ${Repository}/${ProductVersion}/DRFZ4.9.0.21.200_AIX.z
+    /tools/list/ctmagent/ctmagt/setup.sh -BMC_INST_JAVA_HOME /tools/list/ctmagent/java
+
 }
 # EXPL: Met à niveau l'agent Control-M sur AIX en exécutant le setup.sh de ${Repository}/V${ProductVersion}/AGENT/AIX. Se place dans /tools/list/ctmagent/ctmagt avant d'exécuter.
 
@@ -414,7 +418,7 @@ case $OS in
 
 esac
 # ==========================================================
-# GRANDES LIGNES (Résumé rapide, lire si tu veux comprendre sans parcourir le script) :
+# GRANDES LIGNES:
 # - ProductVersion : Définit la version des binaires Control-M à utiliser (ici 9.0.21.300).
 # - Repository : Chemin où sont stockés les scripts et binaires d'installation.
 # - Les fonctions 'install*' et 'upgrade*' appellent des scripts présents dans le repository.
