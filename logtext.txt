@@ -1,0 +1,60 @@
+Il yfunction upgradeagentaix
+
+{
+
+    echo "-> Ugrade Control-M Agent AIX with last version on tools repository: ${ProductVersion}"
+
+    export PATH=$PATH:$HOME/bin:/tools/admin/local/bin:/tools/admin/bin:/tools/admin/san:/usr/local/bin:/sbin
+
+    cd /tools/list/ctmagent/ctmagt
+
+    # ${Repository}/V${ProductVersion}/AGENT/AIX/setup.sh
+
+    cd /tools/list/ctmagent/ctmagt
+
+    gtar -xzf ${Repository}/${ProductVersion}/DRFZ4.9.0.21.200_AIX.z
+
+    /tools/list/ctmagent/ctmagt/setup.sh -BMC_INST_JAVA_HOME /tools/list/ctmagent/java
+ 
+}
+
+ 
+[root@rayaap23 - /softwares/PRODUITS/CONTROLM/Agent]
+
+# ./ControlmAgent21.3003PG.ksh AIX UPDGRADEAGENT
+
+./ControlmAgent21.3003PG.ksh: bash-4.4$:  not found
+
+OS         : AIX
+
+OS version : 7.2.0.0
+
+-> Montage du serveur NIM
+
+FS '/nfs/softwares' deja monte sur rayaap23.
+
+-> Ugrade Control-M Agent AIX with last version on tools repository: V9.0.21.200
+
+Starting graphical user interface...
+ 
+The $DISPLAY environment variable is not defined.
+ 
+Install will continue in non graphical mode.
+
+Are you sure you want to continue?
+
+== <N> No  <Y> Yes ==
+ 
+Enter command:
+
+Y
+ 
+......
+
+-> Demontage du serveur NIM
+
+Demontage NFS de '/nfs/softwares' ...umount: 16 error while unmounting nimsrv:/share/softwares - Device busy
+
+Cmd en erreur : 'umount /nfs/softwares'
+
+ 
