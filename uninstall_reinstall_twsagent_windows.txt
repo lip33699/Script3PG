@@ -1,0 +1,65 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: IBM ZCENTRIC AGENT 21.3 - UNINSTALL & REINSTALL  ::
+:: Compatible Windows Server 2016/2019/2022          ::
+:: Auteur : ChatGPT                                  ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+:: === ÉTAPE 1 : Identifier le service TWS existant ===
+sc query | find "tws"
+
+:: Exemple de résultat :
+:: SERVICE_NAME: tws_cpa_agent_CAA01_08svcZC1
+
+:: === ÉTAPE 2 : Arrêter le service ===
+sc stop "tws_cpa_agent_CAA01_08svcZC1"
+
+:: === ÉTAPE 3 : Supprimer le service ===
+sc delete "tws_cpa_agent_CAA01_08svcZC1"
+
+:: === ÉTAPE 4 : Supprimer les fichiers du programme ===
+rmdir /s /q "C:\Program Files\IBM\TWA"
+
+:: === ÉTAPE 5 : Supprimer les entrées du registre (PowerShell) ===
+powershell -Command "Remove-Item -Path 'HKLM:\SOFTWARE\Wow6432Node\IBM\Tivoli\TWS' -Recurse -ErrorAction SilentlyContinue"
+
+:: === ÉTAPE 6 : (Optionnel) Vérifier qu’aucun processus agent.exe ne reste actif ===
+tasklist | find "agent.exe"
+:: Si encore présent :
+:: taskkill /IM agent.exe /F
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: INSTALLATION DU NOUVEL AGENT ZCENTRIC 21.3.0
+::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+:: === ÉTAPE 7 : Définir le dossier où tu as copié les fichiers d’installation ===
+:: Exemple :
+cd "C:\IBM\IWS_Agent_21.3.0"
+
+:: === ÉTAPE 8 : Lancer l’installation silencieuse ===
+:: Crée d’abord un fichier de configuration twsinst.ini contenant par exemple :
+
+:: ---------------- début du fichier twsinst.ini ----------------
+[AGENT]
+install_dir=C:\Program Files\IBM\TWA
+jmport=5010
+nmport=5010
+isSSL=no
+node_name=CAA01_08svcZC1
+agent_name=CAA01_08svcZC1
+server_address=nom_du_master
+server_port=31111
+protocol=TCP
+:: ---------------- fin du fichier twsinst.ini ----------------
+
+:: Puis lance l’installation :
+twsinst -input twsinst.ini -silent
+
+:: === ÉTAPE 9 : Vérifier que le service est bien créé ===
+sc query | find "tws"
+
+:: === ÉTAPE 10 : Vérifier qu’il écoute bien sur le port 5010 ===
+netstat -ano | find "5010"
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: FIN DU SCRIPT
+::::::::::::::::::::::::::::::::::::::::::::::::::::::
