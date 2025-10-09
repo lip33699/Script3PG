@@ -7,3 +7,17 @@ export PATH=$BMC_INST_JAVA_HOME/bin:$PATH
 ✅ Méthode 2 — passer l’argument directement
 
 /usr/bin/ksh ./setup.sh -java_path /tools/list/ctmagent/java -record /tools/list/ctmagent/silent_install.xml
+
+.......................................
+
+
+
+/usr/bin/ksh ./setup.sh -java_path /tools/list/ctmagent/java -record /tools/list/ctmagent/silent_install.xml
+
+
+
+
+
+
+
+
