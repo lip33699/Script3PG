@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  File      : silent.xml
+  Purpose   : Silent (non-graphical) upgrade installation of Control-M/Agent 9.0.21.300
+  OS        : AIX / Linux
+  Author    : Generic configuration for GICAP
+  Usage     : ./setup.sh -silent /tools/list/ctm_agent/silent.xml
+-->
+
+<AutomatedInstallation langpack="en">
+  <Product>Control-M/Agent 9.0.21.300</Product>
+
+  <!--
+    Installation Type (choose one):
+    Full   = Complete installation
+    Update = Upgrade existing agent
+    Add    = Add component
+  -->
+  <Variable name="INSTALLATION_TYPE" value="Update"/>
+
+  <!--
+    Agent installation directory
+    Default: /opt/controlm/ctmagent
+  -->
+  <Variable name="INSTALL_DIR" value="/tools/list/ctmagent"/>
+
+  <!--
+    Control-M/Server name to which the Agent is connected
+    Example: ctmprd01
+  -->
+  <Variable name="CTMSERVER" value="lr023app07163"/>
+
+  <!--
+    Logical name of the Agent (usually same as hostname)
+  -->
+  <Variable name="AGENT_NAME" value="rayaap"/>
+
+  <!--
+    Communication port between Agent and Control-M/Server
+    Default: 7006
+  -->
+  <Variable name="AGENT_PORT" value="7006"/>
+
+  <!--
+    System user that runs the Control-M Agent service.
+    This user must already exist on the target system.
+  -->
+  <Variable name="AGENT_USER" value="ctmagt"/>
+
+  <!--
+    Password for the Agent system user.
+    Leave empty if the user already has a password configured.
+  -->
+  <Variable name="AGENT_USER_PASSWORD" value="YourPasswordHere"/>
+
+  <!--
+    Temporary directory for installation files
+  -->
+  <Variable name="TEMP_DIR" value="/tmp"/>
+
+  <!--
+    Installation language (en or fr)
+  -->
+  <Variable name="LANGUAGE" value="en"/>
+
+  <!--
+    Automatically start the Agent after upgrade (Y/N)
+  -->
+  <Variable name="AUTO_START" value="Y"/>
+
+  <!--
+    Automatically confirm parameters (no interactive prompts)
+  -->
+  <Variable name="CONFIRMATION" value="Y"/>
+
+</AutomatedInstallation>
