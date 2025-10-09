@@ -1,0 +1,75 @@
+###############################################################################
+# Fichier : silent.txt
+# Objet   : Installation silencieuse (non graphique) de Control-M/Agent 9.0.21.300
+# OS      : AIX / Linux
+# Auteur  : Configuration générique GICAP
+# Utilisation :
+#   ./setup.sh -silent /tools/list/ctm_agent/silent.txt
+###############################################################################
+
+# ---------------------------------------------------------------------------
+# Type d'installation
+# Full   = installation complète
+# Update = mise à jour d'un agent existant
+# Add    = ajout de composant
+# ---------------------------------------------------------------------------
+INSTALLATION_TYPE=Full
+
+# ---------------------------------------------------------------------------
+# Répertoire d'installation de l'agent Control-M
+# Par défaut sous /opt/controlm/ctmagent
+# ---------------------------------------------------------------------------
+INSTALL_DIR=/tools/list/ctmagent
+
+# ---------------------------------------------------------------------------
+# Nom du Control-M/Server maître auquel l'agent sera rattaché
+# Remplacer par le nom réel de ton serveur Control-M (ex: ctmprd01)
+# ---------------------------------------------------------------------------
+CTMSERVER=lr023app07163
+
+# ---------------------------------------------------------------------------
+# Nom logique de l'agent (souvent le nom du serveur)
+# ---------------------------------------------------------------------------
+AGENT_NAME=rayaap
+
+# ---------------------------------------------------------------------------
+# Port de communication entre l'agent et le serveur Control-M
+# Par défaut : 7006
+# ---------------------------------------------------------------------------
+AGENT_PORT=7006
+
+# ---------------------------------------------------------------------------
+# Utilisateur système qui exécutera le service Control-M Agent
+# Cet utilisateur doit déjà exister sur le serveur
+# ---------------------------------------------------------------------------
+AGENT_USER=ctmagt
+
+# ---------------------------------------------------------------------------
+# Mot de passe de l'utilisateur agent (laisser vide si déjà configuré)
+# ---------------------------------------------------------------------------
+#AGENT_USER_PASSWORD=
+
+# ---------------------------------------------------------------------------
+# Répertoire temporaire pour les fichiers d'installation
+# ---------------------------------------------------------------------------
+TEMP_DIR=/tmp
+
+# ---------------------------------------------------------------------------
+# Langue d'installation (en ou fr)
+# ---------------------------------------------------------------------------
+LANGUAGE=en
+
+# ---------------------------------------------------------------------------
+# Démarrage automatique de l'agent après installation
+# Y = oui / N = non
+# ---------------------------------------------------------------------------
+AUTO_START=Y
+
+# ---------------------------------------------------------------------------
+# Confirmation automatique des paramètres (pas de question interactive)
+# ---------------------------------------------------------------------------
+CONFIRMATION=Y
+
+###############################################################################
+# Fin du fichier silent.txt
+###############################################################################
